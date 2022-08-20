@@ -11,9 +11,6 @@ customElements.whenDefined("card-tools").then(() => {
     }
 
     calculateDueDate(dueDate){
-      if (!dueDate) {
-        return -1;
-      }
       var oneDay = 24*60*60*1000; // hours*minutes*seconds*milliseconds
       var today = new Date();
       today.setHours(0,0,0,0);
@@ -53,8 +50,7 @@ customElements.whenDefined("card-tools").then(() => {
         } else if (dateFormat == "DMY") {
           var splitDate = dueDate.split(/[- :T]/)
           return `${splitDate[2]}-${splitDate[1]}-${splitDate[0]}`;
-        }
-	      else {
+        } else {
           return dueDate.substr(0, 10);
         }
       }
@@ -69,22 +65,19 @@ customElements.whenDefined("card-tools").then(() => {
             <h1 class="card-header">${this.header}</h1>
             <div>
               ${this.tasks.length > 0 ? cardTools.LitHtml`
-              ${this.tasks.map((task, index) => cardTools.LitHtml`
-              <div class="info flex task">
-                <div>
-                  <div class="task-title">
-                    ${this.task_prefix}${task.task_title}
+              ${this.tasks.map((task, index) =>
+                cardTools.LitHtml`
+                <div class="info flex task">
+                  <div>
+                    <div class="task-title">${this.task_prefix}${task.task_title}</div>
+                    <div class="secondary">
+                    <span class="${task.due_date != "-" ? this.checkDueClass(task.dueInDays) : ""}">${task.due_date != "-" ? "Due: " + this.formatDueDate(task.due_date, task.dueInDays, this.date_format): ""}</span>
+                    </div>
                   </div>
-                  <div class="secondary">
-                    <span class="${task.due_date ? this.checkDueClass(task.dueInDays) : ""}">
-                      ${task.due_date ? "Due: " + this.formatDueDate(task.due_date, task.dueInDays, this.date_format): ""}
-                    </span>
-                  </div>
-                </div>
-                ${this.show_check != false ? cardTools.LitHtml`
-                <div class="checkbox">
-                  <button class="button" id=${"task_" + index} @click=${ev => this._complete(task.task_title, index)}>
-		  ${this.alternative_style == false ? `✓` : cardTools.LitHtml`
+                  ${this.show_check != false ? cardTools.LitHtml`<div class="checkbox">
+                  <mwc-button class="button" id=${"task_" + index} @click=${ev => this._complete(task.task_title, index)}>
+
+                  ${this.alternative_style == false ? `✓` : cardTools.LitHtml`
 	  <svg preserveAspectRatio="xMidYMid meet" focusable="false" role="img" aria-hidden="true" viewBox="0 0 24 24" class="gtasks-item-icon gtasks-checkbox-icon">
       <g>
      <path d="M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M19,5V19H5V5H19Z"></path>
@@ -95,58 +88,40 @@ customElements.whenDefined("card-tools").then(() => {
      <path d="M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M19,5V19H5V5H19M10,17L6,13L7.41,11.58L10,14.17L16.59,7.58L18,9"></path>
       </g>
     </svg>`}
-		  </button>
-                </div>` : ""}
-              </div>
-              ${task.children.map((child, subindex) => cardTools.LitHtml`
-              <div class="info flex child">
-                <div>
-                  <div class="child-title">
-                    ${this.task_prefix}${child.task_title}
-                  </div>
-                  <div class="secondary">
-                    <span class="${child.due_date != 9999 ? this.checkDueClass(this.calculateDueDate(child.due_date)) : ""}">
-                      ${child.due_date != 9999 ? "Due: " + this.formatDueDate(child.due_date, this.calculateDueDate(child.due_date), this.date_format): ""}
-                    </span>
-                  </div>
-		</div>
-                ${this.show_check != false ? cardTools.LitHtml`
-                <div class="checkbox">
-                  <button class="button" id=${"task_" + index + "_" + subindex} @click=${ev => this._complete(child.task_title, index + "_" + subindex)}>✓</button>
+		  </mwc-button>
+                </div>`
+                  : ""}
                 </div>
-                `: ""}
-              </div>
-              `)}
-              `)}` : cardTools.LitHtml`
-              <div class="info flex">- No tasks...</div>
-              `}
+
+                `
+              )}` : cardTools.LitHtml`<div class="info flex">- No tasks...</div>`}
             </div>
-            ${this.notShowing.length > 0 ? cardTools.LitHtml`
-            <div class="secondary">${"Look in Google Tasks for " + this.notShowing.length + " more tasks..."}</div>`
+            ${this.notShowing.length > 0 ? cardTools.LitHtml`<div class="secondary">${"Look in Google Tasks for " + this.notShowing.length + " more tasks..."}</div>`
             : ""}
             ${this.show_add != false ? cardTools.LitHtml`
             <div class="info flex new-task">
-              <div>
-                <paper-input label="New Task" id="new_task_input" type="text" no-label-float>New Task</paper-input>
-              </div>
-              <div>
-                <button class="button" id="new_task_button" @click=${ev => this._new_task()}>
-		${this.alternative_style == false ? `+` : cardTools.LitHtml`
+            <div>
+              <paper-input label="New Task" id="new_task_input" type="text" no-label-float>New Task</paper-input>
+            </div>
+            <div>
+              <mwc-button id="new_task_button" @click=${ev => this._new_task()}>
+
+                  ${this.alternative_style == false ? `+` : cardTools.LitHtml`
 	      <svg preserveAspectRatio="xMidYMid meet" focusable="false" role="img" aria-hidden="true" viewBox="0 0 24 24" class="gtasks-item-icon gtasks-add-new-icon">
       <g>
       <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"></path>
       </g>
-      </svg>`}
-		</button>
-              </div>
-            </div>` : "" }
+    </svg>`}
+	      </mwc-button>
+            </div>
+          </div>` : "" }
           </ha-card>`}
       `;
     }
 
     async _complete(task_name, index){
       var sensor_name = "sensor.gtasks_" + this.list_name.toLowerCase().replaceAll(" ", "_");
-      this.shadowRoot.querySelector("#task_" + index).setAttribute("disabled", "true");
+      this.shadowRoot.querySelector("#task_" + index).setAttribute("disabled");
       await this._hass.callService("gtasks", "complete_task", {
         task_title: task_name,
         tasks_list: this.list_name
@@ -159,8 +134,8 @@ customElements.whenDefined("card-tools").then(() => {
 
     async _new_task(new_task_name){
       var new_task_name = this.shadowRoot.querySelector("#new_task_input").value;
-      this.shadowRoot.querySelector("#new_task_input").setAttribute("disabled", "true");
-      this.shadowRoot.querySelector("#new_task_button").setAttribute("disabled", "true");
+      this.shadowRoot.querySelector("#new_task_input").setAttribute("disabled");
+      this.shadowRoot.querySelector("#new_task_button").setAttribute("disabled");
       var sensor_name = "sensor.gtasks_" + this.list_name.toLowerCase().replaceAll(" ", "_");
       await this._hass.callService("gtasks", "new_task", {
         task_title: new_task_name,
@@ -229,23 +204,10 @@ customElements.whenDefined("card-tools").then(() => {
               padding-left: 15px;
               margin-top: -4px;
             }
-            .button {
-              background: transparent;
-              border: none;
-              color: var(--accent-color);
-              font-weight: 700;
-            }
-            .button:hover {
-              cursor: pointer;
-            }
-	    .button:disabled {
-	      color: var(--disabled-text-color);
-	      cursor: not-allowed;
-	    }
-            .child {
-              padding: 3px 0 3px 35px;
-            }
-	    .gtasks-item-icon {
+						/*.button {
+						  height: 0px;
+						}*/
+						.gtasks-item-icon {
 							height: 20px;
 							width: auto;
 						}
@@ -261,6 +223,7 @@ customElements.whenDefined("card-tools").then(() => {
 						.checkbox:hover .gtasks-checkbox-icon {
 							display: none;
 						}
+
           </style>
         `;
       }
@@ -280,7 +243,7 @@ customElements.whenDefined("card-tools").then(() => {
       this.task_prefix = this.config.task_prefix == null ? null : this.config.task_prefix;
       //options for date_format are "YMD" "DMY" "MDY"
       this.date_format = this.config.date_format == null ? "YMD" : this.config.date_format;
-  this.alternative_style = this.config.alternative_style == null ? false : this.config.alternative_style;
+      this.alternative_style = this.config.alternative_style == null ? false : this.config.alternative_style;
 
       if (entity.state == "unknown")
         throw new Error("The Gtasks sensor is unknown.");
@@ -310,11 +273,13 @@ customElements.whenDefined("card-tools").then(() => {
               allTasks.unshift(task);
             }
             else if(task.due_date != null && task.due_date.slice(0,4) == "2999") {
+              task.due_date = "-";
               allTasks.push(task)
             }
           }
           else {
-            if(task.due_date == null || dueInDays == 10000 || task.due_date.slice(0,4) == "2999"){
+            if(task.due_date == null || task.due_date == "-" || dueInDays == 10000 || task.due_date.slice(0,4) == "2999"){
+              task.due_date = "-";
               allTasks.push(task)
             }
             else
@@ -338,6 +303,114 @@ customElements.whenDefined("card-tools").then(() => {
       this.requestUpdate();
     }
 
+customElements.whenDefined("card-tools").then(() => {
+  let cardTools = customElements.get("card-tools");
+
+  class GtasksCard extends cardTools.LitElement {
+
+    setConfig(config) {
+      if (!config.entity) {
+        throw new Error("Please define entity");
+      }
+      this.config = config;
+    }
+
+    calculateDueDate(dueDate){
+      var oneDay = 24*60*60*1000; // hours*minutes*seconds*milliseconds
+      var today = new Date();
+      today.setHours(0,0,0,0);
+
+      var splitDate = dueDate.split(/[- :T]/);
+      var parsedDueDate = new Date(splitDate[0], splitDate[1]-1, splitDate[2]);
+      parsedDueDate.setHours(0,0,0,0);
+
+      var dueInDays;
+      if(today > parsedDueDate) {
+        dueInDays = -1;
+"gtasks-card.js" 323L, 11195B                                                                             13,30         Top
+customElements.whenDefined("card-tools").then(() => {
+  let cardTools = customElements.get("card-tools");
+
+  class GtasksCard extends cardTools.LitElement {
+
+    setConfig(config) {
+      if (!config.entity) {
+        throw new Error("Please define entity");
+      }
+      this.config = config;
+    }
+
+    calculateDueDate(dueDate){
+      var oneDay = 24*60*60*1000; // hours*minutes*seconds*milliseconds
+      var today = new Date();
+      today.setHours(0,0,0,0);
+
+      var splitDate = dueDate.split(/[- :T]/);
+      var parsedDueDate = new Date(splitDate[0], splitDate[1]-1, splitDate[2]);
+      parsedDueDate.setHours(0,0,0,0);
+
+      var dueInDays;
+      if(today > parsedDueDate) {
+        dueInDays = -1;
+-- VISUAL --                                                                                    323       1,1           Top
+customElements.whenDefined("card-tools").then(() => {
+      }
+      else
+      return dueInDays;
+        return "Today";
+      else {
+          return `${splitDate[1]}-${splitDate[2]}-${splitDate[0]}`;
+          return `${splitDate[2]}-${splitDate[1]}-${splitDate[0]}`;
+        }
+              else {
+      }
+    render(){
+      return cardTools.LitHtml
+      `
+              ${this.tasks.length > 0 ? cardTools.LitHtml`
+                    </span>
+                ${this.show_check != false ? cardTools.LitHtml`
+                  ${this.alternative_style == false ? `✓` : cardTools.LitHtml`
+      <g>
+                  <div class="child-title">
+                  <div class="secondary">
+                    </span>
+                  </div>
+                </div>
+                ${this.show_check != false ? cardTools.LitHtml`
+            : ""}
+            ${this.show_add != false ? cardTools.LitHtml`
+            <div class="info flex new-task">
+              </div>
+      </g>
+      </svg>`}
+                </button>
+              </div>
+
+      this.shadowRoot.querySelector("#task_" + index).setAttribute("disabled", "true");
+      await this._hass.callService("gtasks", "complete_task", {
+      });
+            .gtasks-item-icon {
+                                                        display: none;
+                                                }
+
+                                                .checkbox:hover .gtasks-item-icon, .new-task:hover .gtasks-add-new-icon {
+                                                        display: block;
+                                                        opacity: 0.5;
+                                                }
+
+      const entity = hass.states[this.config.entity];
+      this.header = this.config.title == null ? list_title : this.config.title;
+      this.date_format = this.config.date_format == null ? "YMD" : this.config.date_format;
+  this.alternative_style = this.config.alternative_style == null ? false : this.config.alternative_style;
+
+      var allTasks = []
+          if (a.due_date != null && b.due_date != null) {
+            var aSplitDate = a.due_date.split(/[- :T]/)
+            return;
+        })
+          this.tasks = allTasks;
+          this.notShowing = 0;
 
 
       // @TODO: This requires more intelligent logic

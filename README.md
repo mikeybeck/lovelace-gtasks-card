@@ -23,6 +23,7 @@ Options include:
 - show_check: whether to show check marks to complete tasks.
 - task_prefix: a string which is prefixed to all tasks i.e. ' * '.
 - date_format: a string of either 'YMD', 'DMY', 'MDY' to print dates in your preferred format.
+- alternative_style: true/false whether to display alternative style.
 
 Example:
 ```yaml

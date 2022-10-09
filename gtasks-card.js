@@ -83,19 +83,7 @@ customElements.whenDefined("card-tools").then(() => {
                 </div>
                 ${this.show_check != false ? cardTools.LitHtml`
                 <div class="checkbox">
-                  <button class="button" id=${"task_" + index} @click=${ev => this._complete(task.task_title, index)}>
-		  ${this.alternative_style == false ? `✓` : cardTools.LitHtml`
-	  <svg preserveAspectRatio="xMidYMid meet" focusable="false" role="img" aria-hidden="true" viewBox="0 0 24 24" class="gtasks-item-icon gtasks-checkbox-icon">
-      <g>
-     <path d="M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M19,5V19H5V5H19Z"></path>
-      </g>
-    </svg>
-    <svg preserveAspectRatio="xMidYMid meet" focusable="false" role="img" aria-hidden="true" viewBox="0 0 24 24" class="gtasks-item-icon gtasks-checkbox-checked-icon">
-      <g>
-     <path d="M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M19,5V19H5V5H19M10,17L6,13L7.41,11.58L10,14.17L16.59,7.58L18,9"></path>
-      </g>
-    </svg>`}
-		  </button>
+                  <button class="button" id=${"task_" + index} @click=${ev => this._complete(task.task_title, index)}>✓</button>
                 </div>` : ""}
               </div>
               ${task.children.map((child, subindex) => cardTools.LitHtml`
@@ -130,14 +118,7 @@ customElements.whenDefined("card-tools").then(() => {
                 <paper-input label="New Task" id="new_task_input" type="text" no-label-float>New Task</paper-input>
               </div>
               <div>
-                <button class="button" id="new_task_button" @click=${ev => this._new_task()}>
-		${this.alternative_style == false ? `+` : cardTools.LitHtml`
-	      <svg preserveAspectRatio="xMidYMid meet" focusable="false" role="img" aria-hidden="true" viewBox="0 0 24 24" class="gtasks-item-icon gtasks-add-new-icon">
-      <g>
-      <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"></path>
-      </g>
-      </svg>`}
-		</button>
+                <button class="button" id="new_task_button" @click=${ev => this._new_task()}>+</button>
               </div>
             </div>` : "" }
           </ha-card>`}
@@ -245,22 +226,6 @@ customElements.whenDefined("card-tools").then(() => {
             .child {
               padding: 3px 0 3px 35px;
             }
-	    .gtasks-item-icon {
-							height: 20px;
-							width: auto;
-						}
-						.gtasks-checkbox-checked-icon {
-							display: none;
-						}
-
-						.checkbox:hover .gtasks-item-icon, .new-task:hover .gtasks-add-new-icon {
-							display: block;
-							opacity: 0.5;
-						}
-
-						.checkbox:hover .gtasks-checkbox-icon {
-							display: none;
-						}
           </style>
         `;
       }
@@ -280,7 +245,6 @@ customElements.whenDefined("card-tools").then(() => {
       this.task_prefix = this.config.task_prefix == null ? null : this.config.task_prefix;
       //options for date_format are "YMD" "DMY" "MDY"
       this.date_format = this.config.date_format == null ? "YMD" : this.config.date_format;
-  this.alternative_style = this.config.alternative_style == null ? false : this.config.alternative_style;
 
       if (entity.state == "unknown")
         throw new Error("The Gtasks sensor is unknown.");

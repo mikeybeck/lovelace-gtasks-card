@@ -34,6 +34,7 @@ show_add: true
 task_prefix: '- '
 date_format: DMY
 show_check: true
+alternative_style: false
 ```
 
 

@@ -54,7 +54,7 @@ customElements.whenDefined("card-tools").then(() => {
           var splitDate = dueDate.split(/[- :T]/)
           return `${splitDate[2]}-${splitDate[1]}-${splitDate[0]}`;
         }
-	      else {
+        else {
           return dueDate.substr(0, 10);
         }
       }
@@ -70,7 +70,7 @@ customElements.whenDefined("card-tools").then(() => {
             <div>
               ${this.tasks.length > 0 ? cardTools.LitHtml`
               ${this.tasks.map((task, index) => cardTools.LitHtml`
-              <div class="info flex task">
+              <div class="info flex task" id=${"main_div_" + index}>
                 <div>
                   <div class="task-title">
                     ${this.task_prefix}${task.task_title}
@@ -83,24 +83,36 @@ customElements.whenDefined("card-tools").then(() => {
                 </div>
                 ${this.show_check != false ? cardTools.LitHtml`
                 <div class="checkbox">
-                  <button class="button" id=${"task_" + index} @click=${ev => this._complete(task.task_title, index)}>✓</button>
+                  <button class="button"
+                          id=${"task_" + index}
+                          @click=${ev => this._complete(task.task_title, index)}
+                          @mouseover=${ev => this.darkenBg('main_div_' + index, true)}
+                          @mouseout=${ev => this.darkenBg('main_div_' + index, false)}>
+                   ✓
+                </button>
                 </div>` : ""}
               </div>
               ${task.children.map((child, subindex) => cardTools.LitHtml`
-              <div class="info flex child">
+              <div class="info flex child" id=${"main_div_" + index + "_" + subindex}>
                 <div>
                   <div class="child-title">
                     ${this.task_prefix}${child.task_title}
                   </div>
                   <div class="secondary">
-                    <span class="${child.due_date != 9999 ? this.checkDueClass(this.calculateDueDate(child.due_date)) : ""}">
-                      ${child.due_date != 9999 ? "Due: " + this.formatDueDate(child.due_date, this.calculateDueDate(child.due_date), this.date_format): ""}
+                    <span class="${child.due_date ? this.checkDueClass(this.calculateDueDate(child.due_date)) : ""}">
+                      ${child.due_date ? "Due: " + this.formatDueDate(child.due_date, this.calculateDueDate(child.due_date), this.date_format): ""}
                     </span>
                   </div>
-		</div>
+                </div>
                 ${this.show_check != false ? cardTools.LitHtml`
                 <div class="checkbox">
-                  <button class="button" id=${"task_" + index + "_" + subindex} @click=${ev => this._complete(child.task_title, index + "_" + subindex)}>✓</button>
+                  <button class="button"
+                          id=${"task_" + index + "_" + subindex}
+                          @mouseover=${ev => this.darkenBg('main_div_' + index + "_" + subindex, true)}
+                          @mouseout=${ev => this.darkenBg('main_div_' + index + "_" + subindex, false)}
+                          @click=${ev => this._complete(child.task_title, index + "_" + subindex)}>
+                    ✓
+                  </button>
                 </div>
                 `: ""}
               </div>
@@ -125,15 +137,29 @@ customElements.whenDefined("card-tools").then(() => {
       `;
     }
 
+    darkenBg(index, value) {
+      if (value) {
+        var el = this.shadowRoot.querySelector("#" + index);
+        if (el) {
+          el.classList.add("darken");
+        }
+      } else {
+        var el = this.shadowRoot.querySelector("#" + index);
+        if (el) {
+          el.classList.remove("darken");
+        }
+      }
+    }
+
     async _complete(task_name, index){
-      var sensor_name = "sensor.gtasks_" + this.list_name.toLowerCase().replaceAll(" ", "_");
       this.shadowRoot.querySelector("#task_" + index).setAttribute("disabled", "true");
+      this.shadowRoot.querySelector("#main_div_" + index).classList.remove("darken");
       await this._hass.callService("gtasks", "complete_task", {
         task_title: task_name,
         tasks_list: this.list_name
       });
       await this._hass.callService("homeassistant", "update_entity", {
-        entity_id: sensor_name
+        entity_id: this.config.entity 
       });
       this.shadowRoot.querySelector("#task_" + index).removeAttribute("disabled");
     }
@@ -142,13 +168,12 @@ customElements.whenDefined("card-tools").then(() => {
       var new_task_name = this.shadowRoot.querySelector("#new_task_input").value;
       this.shadowRoot.querySelector("#new_task_input").setAttribute("disabled", "true");
       this.shadowRoot.querySelector("#new_task_button").setAttribute("disabled", "true");
-      var sensor_name = "sensor.gtasks_" + this.list_name.toLowerCase().replaceAll(" ", "_");
       await this._hass.callService("gtasks", "new_task", {
         task_title: new_task_name,
         tasks_list: this.list_name
       });
       await this._hass.callService("homeassistant", "update_entity", {
-        entity_id: sensor_name
+        entity_id: this.config.entity
       });
       this.shadowRoot.querySelector("#new_task_input").value = "";
       this.shadowRoot.querySelector("#new_task_input").removeAttribute("disabled");
@@ -219,12 +244,15 @@ customElements.whenDefined("card-tools").then(() => {
             .button:hover {
               cursor: pointer;
             }
-	    .button:disabled {
-	      color: var(--disabled-text-color);
-	      cursor: not-allowed;
-	    }
+            .button:disabled {
+              color: var(--disabled-text-color);
+              cursor: not-allowed;
+            }
             .child {
               padding: 3px 0 3px 35px;
+            }
+            .darken {
+              background: linear-gradient(rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.25));
             }
           </style>
         `;
@@ -267,18 +295,15 @@ customElements.whenDefined("card-tools").then(() => {
         })
 
         tasks.map(task =>{
-          var dueInDays = task.due_date ? this.calculateDueDate(task.due_date) : 10000;
+          var dueInDays = task.due_date ? this.calculateDueDate(task.due_date) : null;
           task.dueInDays = dueInDays;
           if(this.show_days != null) {
-            if(dueInDays <= this.show_days){
+            if(dueInDays != null && dueInDays <= this.show_days){
               allTasks.unshift(task);
-            }
-            else if(task.due_date != null && task.due_date.slice(0,4) == "2999") {
-              allTasks.push(task)
             }
           }
           else {
-            if(task.due_date == null || dueInDays == 10000 || task.due_date.slice(0,4) == "2999"){
+            if(task.due_date == null){
               allTasks.push(task)
             }
             else
@@ -304,9 +329,8 @@ customElements.whenDefined("card-tools").then(() => {
 
 
 
-      // @TODO: This requires more intelligent logic
     getCardSize() {
-      return 3;
+      return 4 + parseInt(this.tasks.length / 4);
     }
   }
 

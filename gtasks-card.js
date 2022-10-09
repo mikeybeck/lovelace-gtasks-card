@@ -65,32 +65,50 @@ customElements.whenDefined("card-tools").then(() => {
             <h1 class="card-header">${this.header}</h1>
             <div>
               ${this.tasks.length > 0 ? cardTools.LitHtml`
-              ${this.tasks.map((task, index) =>
-                cardTools.LitHtml`
-                <div class="info flex task">
-                  <div>
-                    <div class="task-title">${this.task_prefix}${task.task_title}</div>
-                    <div class="secondary">
-                    <span class="${task.due_date != "-" ? this.checkDueClass(task.dueInDays) : ""}">${task.due_date != "-" ? "Due: " + this.formatDueDate(task.due_date, task.dueInDays, this.date_format): ""}</span>
-                    </div>
+              ${this.tasks.map((task, index) => cardTools.LitHtml`
+              <div class="info flex task" id=${"main_div_" + index}>
+                <div>
+                  <div class="task-title">
+                    ${this.task_prefix}${task.task_title}
                   </div>
-                  ${this.show_check != false ? cardTools.LitHtml`<div class="checkbox">
-                  <mwc-button class="button" id=${"task_" + index} @click=${ev => this._complete(task.task_title, index)}>
-
-                  ${this.alternative_style == false ? `✓` : cardTools.LitHtml`
-	  <svg preserveAspectRatio="xMidYMid meet" focusable="false" role="img" aria-hidden="true" viewBox="0 0 24 24" class="gtasks-item-icon gtasks-checkbox-icon">
-      <g>
-     <path d="M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M19,5V19H5V5H19Z"></path>
-      </g>
-    </svg>
-    <svg preserveAspectRatio="xMidYMid meet" focusable="false" role="img" aria-hidden="true" viewBox="0 0 24 24" class="gtasks-item-icon gtasks-checkbox-checked-icon">
-      <g>
-     <path d="M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M19,5V19H5V5H19M10,17L6,13L7.41,11.58L10,14.17L16.59,7.58L18,9"></path>
-      </g>
-    </svg>`}
-		  </mwc-button>
-                </div>`
-                  : ""}
+                  <div class="secondary">
+                    <span class="${task.due_date ? this.checkDueClass(task.dueInDays) : ""}">
+                      ${task.due_date ? "Due: " + this.formatDueDate(task.due_date, task.dueInDays, this.date_format): ""}
+                    </span>
+                  </div>
+                </div>
+                ${this.show_check != false ? cardTools.LitHtml`
+                <div class="checkbox">
+                  <button class="button"
+                          id=${"task_" + index}
+                          @click=${ev => this._complete(task.task_title, index)}
+                          @mouseover=${ev => this.darkenBg('main_div_' + index, true)}
+                          @mouseout=${ev => this.darkenBg('main_div_' + index, false)}>
+                   ✓
+                </button>
+                </div>` : ""}
+              </div>
+              ${task.children.map((child, subindex) => cardTools.LitHtml`
+              <div class="info flex child" id=${"main_div_" + index + "_" + subindex}>
+                <div>
+                  <div class="child-title">
+                    ${this.task_prefix}${child.task_title}
+                  </div>
+                  <div class="secondary">
+                    <span class="${child.due_date ? this.checkDueClass(this.calculateDueDate(child.due_date)) : ""}">
+                      ${child.due_date ? "Due: " + this.formatDueDate(child.due_date, this.calculateDueDate(child.due_date), this.date_format): ""}
+                    </span>
+                  </div>
+                </div>
+                ${this.show_check != false ? cardTools.LitHtml`
+                <div class="checkbox">
+                  <button class="button"
+                          id=${"task_" + index + "_" + subindex}
+                          @mouseover=${ev => this.darkenBg('main_div_' + index + "_" + subindex, true)}
+                          @mouseout=${ev => this.darkenBg('main_div_' + index + "_" + subindex, false)}
+                          @click=${ev => this._complete(child.task_title, index + "_" + subindex)}>
+                    ✓
+                  </button>
                 </div>
 
                 `
@@ -119,30 +137,43 @@ customElements.whenDefined("card-tools").then(() => {
       `;
     }
 
+    darkenBg(index, value) {
+      if (value) {
+        var el = this.shadowRoot.querySelector("#" + index);
+        if (el) {
+          el.classList.add("darken");
+        }
+      } else {
+        var el = this.shadowRoot.querySelector("#" + index);
+        if (el) {
+          el.classList.remove("darken");
+        }
+      }
+    }
+
     async _complete(task_name, index){
-      var sensor_name = "sensor.gtasks_" + this.list_name.toLowerCase().replaceAll(" ", "_");
-      this.shadowRoot.querySelector("#task_" + index).setAttribute("disabled");
+      this.shadowRoot.querySelector("#task_" + index).setAttribute("disabled", "true");
+      this.shadowRoot.querySelector("#main_div_" + index).classList.remove("darken");
       await this._hass.callService("gtasks", "complete_task", {
         task_title: task_name,
         tasks_list: this.list_name
       });
       await this._hass.callService("homeassistant", "update_entity", {
-        entity_id: sensor_name
+        entity_id: this.config.entity 
       });
       this.shadowRoot.querySelector("#task_" + index).removeAttribute("disabled");
     }
 
     async _new_task(new_task_name){
       var new_task_name = this.shadowRoot.querySelector("#new_task_input").value;
-      this.shadowRoot.querySelector("#new_task_input").setAttribute("disabled");
-      this.shadowRoot.querySelector("#new_task_button").setAttribute("disabled");
-      var sensor_name = "sensor.gtasks_" + this.list_name.toLowerCase().replaceAll(" ", "_");
+      this.shadowRoot.querySelector("#new_task_input").setAttribute("disabled", "true");
+      this.shadowRoot.querySelector("#new_task_button").setAttribute("disabled", "true");
       await this._hass.callService("gtasks", "new_task", {
         task_title: new_task_name,
         tasks_list: this.list_name
       });
       await this._hass.callService("homeassistant", "update_entity", {
-        entity_id: sensor_name
+        entity_id: this.config.entity
       });
       this.shadowRoot.querySelector("#new_task_input").value = "";
       this.shadowRoot.querySelector("#new_task_input").removeAttribute("disabled");
@@ -204,26 +235,25 @@ customElements.whenDefined("card-tools").then(() => {
               padding-left: 15px;
               margin-top: -4px;
             }
-						/*.button {
-						  height: 0px;
-						}*/
-						.gtasks-item-icon {
-							height: 20px;
-							width: auto;
-						}
-						.gtasks-checkbox-checked-icon {
-							display: none;
-						}
-
-						.checkbox:hover .gtasks-item-icon, .new-task:hover .gtasks-add-new-icon {
-							display: block;
-							opacity: 0.5;
-						}
-
-						.checkbox:hover .gtasks-checkbox-icon {
-							display: none;
-						}
-
+            .button {
+              background: transparent;
+              border: none;
+              color: var(--accent-color);
+              font-weight: 700;
+            }
+            .button:hover {
+              cursor: pointer;
+            }
+            .button:disabled {
+              color: var(--disabled-text-color);
+              cursor: not-allowed;
+            }
+            .child {
+              padding: 3px 0 3px 35px;
+            }
+            .darken {
+              background: linear-gradient(rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.25));
+            }
           </style>
         `;
       }
@@ -266,20 +296,14 @@ customElements.whenDefined("card-tools").then(() => {
         })
 
         tasks.map(task =>{
-          var dueInDays = task.due_date ? this.calculateDueDate(task.due_date) : 10000;
+          var dueInDays = task.due_date ? this.calculateDueDate(task.due_date) : null;
           task.dueInDays = dueInDays;
           if(this.show_days != null) {
-            if(dueInDays <= this.show_days){
+            if(dueInDays != null && dueInDays <= this.show_days){
               allTasks.unshift(task);
             }
-            else if(task.due_date != null && task.due_date.slice(0,4) == "2999") {
-              task.due_date = "-";
-              allTasks.push(task)
-            }
-          }
-          else {
-            if(task.due_date == null || task.due_date == "-" || dueInDays == 10000 || task.due_date.slice(0,4) == "2999"){
-              task.due_date = "-";
+          } else {
+            if(task.due_date == null){
               allTasks.push(task)
             }
             else
@@ -413,9 +437,8 @@ customElements.whenDefined("card-tools").then(() => {
           this.notShowing = 0;
 
 
-      // @TODO: This requires more intelligent logic
     getCardSize() {
-      return 3;
+      return 4 + parseInt(this.tasks.length / 4);
     }
   }
 
